@@ -127,6 +127,8 @@ public class AnnotationHandlers {
 		/* UIThreadHandler and BackgroundHandler must be after TraceHandler */
 		add(new UiThreadHandler(processingEnvironment));
 		add(new BackgroundHandler(processingEnvironment));
+
+		add(new LogHandler(processingEnvironment));
 	}
 
 	private void add(AnnotationHandler<? extends GeneratedClassHolder> annotationHandler) {
