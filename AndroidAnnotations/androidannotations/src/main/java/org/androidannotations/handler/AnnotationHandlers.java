@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2010-2013 eBusiness Information, Excilys Group
+ * Copyright (C) 2010-2014 eBusiness Information, Excilys Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -14,14 +14,6 @@
  * the License.
  */
 package org.androidannotations.handler;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.annotation.processing.ProcessingEnvironment;
 
 import org.androidannotations.handler.rest.DeleteHandler;
 import org.androidannotations.handler.rest.GetHandler;
@@ -39,6 +31,13 @@ import org.androidannotations.model.AndroidSystemServices;
 import org.androidannotations.model.AnnotationElements;
 import org.androidannotations.process.ProcessHolder;
 import org.androidannotations.rclass.IRClass;
+
+import javax.annotation.processing.ProcessingEnvironment;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class AnnotationHandlers {
 
@@ -65,6 +64,7 @@ public class AnnotationHandlers {
 		add(new PrefHandler(processingEnvironment));
 		add(new RoboGuiceHandler(processingEnvironment));
 		add(new ViewByIdHandler(processingEnvironment));
+		add(new ViewsByIdHandler(processingEnvironment));
 		add(new FragmentByIdHandler(processingEnvironment));
 		add(new FragmentByTagHandler(processingEnvironment));
 		add(new FromHtmlHandler(processingEnvironment));
@@ -76,11 +76,11 @@ public class AnnotationHandlers {
 		add(new ItemClickHandler(processingEnvironment));
 		add(new ItemSelectHandler(processingEnvironment));
 		add(new ItemLongClickHandler(processingEnvironment));
+		add(new EditorActionHandler(processingEnvironment));
 		for (AndroidRes androidRes : AndroidRes.values()) {
 			add(new ResHandler(androidRes, processingEnvironment));
 		}
 		add(new TransactionalHandler(processingEnvironment));
-		add(new ExtraHandler(processingEnvironment));
 		add(new FragmentArgHandler(processingEnvironment));
 		add(new SystemServiceHandler(processingEnvironment));
 		add(new RestHandler(processingEnvironment));
@@ -102,6 +102,7 @@ public class AnnotationHandlers {
 		add(new RootContextHanlder(processingEnvironment));
 		add(new NonConfigurationInstanceHandler(processingEnvironment));
 		add(new BeanHandler(processingEnvironment));
+		add(new ExtraHandler(processingEnvironment));
 		add(new BeforeTextChangeHandler(processingEnvironment));
 		add(new TextChangeHandler(processingEnvironment));
 		add(new AfterTextChangeHandler(processingEnvironment));
@@ -109,34 +110,55 @@ public class AnnotationHandlers {
 		add(new SeekBarTouchStartHandler(processingEnvironment));
 		add(new SeekBarTouchStopHandler(processingEnvironment));
 		add(new ServiceActionHandler(processingEnvironment));
-		add(new SubscribeHandler(processingEnvironment));
 		add(new ProduceHandler(processingEnvironment));
+		add(new SubscribeHandler(processingEnvironment));
 		add(new InstanceStateHandler(processingEnvironment));
 		add(new HttpsClientHandler(processingEnvironment));
-		add(new OnActivityResultHandler(processingEnvironment));
 		add(new HierarchyViewerSupportHandler(processingEnvironment));
 		add(new WindowFeatureHandler(processingEnvironment));
+		new ReceiverHandler(processingEnvironment).register(this);
+		new ReceiverActionHandler(processingEnvironment).register(this);
+		new OnActivityResultHandler(processingEnvironment).register(this);
 
+		add(new IgnoredWhenDetachedHandler(processingEnvironment));
 		/* After injection methods must be after injections */
 		add(new AfterInjectHandler(processingEnvironment));
+		add(new AfterExtrasHandler(processingEnvironment));
 		add(new AfterViewsHandler(processingEnvironment));
 
 		if (optionsHelper.shouldLogTrace()) {
 			add(new TraceHandler(processingEnvironment));
 		}
-		/* UIThreadHandler and BackgroundHandler must be after TraceHandler */
+
+		/*
+		 * WakeLockHandler must be after TraceHandler but before UiThreadHandler
+		 * and BackgroundHandler
+		 */
+		add(new WakeLockHandler(processingEnvironment));
+
+		/*
+		 * UIThreadHandler and BackgroundHandler must be after TraceHandler and
+		 * IgnoredWhenDetached
+		 */
 		add(new UiThreadHandler(processingEnvironment));
 		add(new BackgroundHandler(processingEnvironment));
 
 		add(new LogHandler(processingEnvironment));
+
+		/*
+		 * SupposeUiThreadHandler and SupposeBackgroundHandler must be after all
+		 * handlers that modifies generated method body
+		 */
+		add(new SupposeUiThreadHandler(processingEnvironment));
+		add(new SupposeBackgroundHandler(processingEnvironment));
 	}
 
-	private void add(AnnotationHandler<? extends GeneratedClassHolder> annotationHandler) {
+	public void add(AnnotationHandler<? extends GeneratedClassHolder> annotationHandler) {
 		annotationHandlers.add(annotationHandler);
 		decoratingAnnotationHandlers.add(annotationHandler);
 	}
 
-	private void add(GeneratingAnnotationHandler<? extends GeneratedClassHolder> annotationHandler) {
+	public void add(GeneratingAnnotationHandler<? extends GeneratedClassHolder> annotationHandler) {
 		annotationHandlers.add(annotationHandler);
 		generatingAnnotationHandlers.add(annotationHandler);
 	}
